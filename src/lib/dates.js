@@ -3,7 +3,6 @@ import {
   format, subMonths, addDays, differenceInDays, parseISO, isToday,
 } from 'date-fns';
 
-// Calendar month boundaries (you chose calendar month, not custom start day)
 export function thisMonthRange(date = new Date()) {
   return { from: startOfMonth(date), to: endOfMonth(date) };
 }
@@ -39,12 +38,24 @@ export function fromISODate(s) {
   return parseISO(s);
 }
 
+/**
+ * Returns a human-friendly label for a date — handles both past and future dates.
+ * Past:   Today / Yesterday / weekday name (≤6 days) / "Mon, 4 Apr" (older)
+ * Future: Tomorrow / weekday name (≤6 days ahead) / "4 Aug" (7+ days ahead)
+ */
 export function relativeDay(dateStr) {
   const d = typeof dateStr === 'string' ? parseISO(dateStr) : dateStr;
+  const now = new Date();
   if (isToday(d)) return 'Today';
-  const diff = differenceInDays(new Date(), d);
-  if (diff === 1) return 'Yesterday';
-  if (diff < 7) return format(d, 'EEEE');
+  // differenceInDays(d, now): positive = future, negative = past
+  const diff = differenceInDays(d, now);
+  if (diff === 1) return 'Tomorrow';
+  if (diff > 1 && diff <= 6) return format(d, 'EEEE');
+  if (diff >= 7) return format(d, 'd MMM');
+  // Past
+  const past = -diff;
+  if (past === 1) return 'Yesterday';
+  if (past <= 6) return format(d, 'EEEE');
   return format(d, 'EEE, d MMM');
 }
 

@@ -28,16 +28,6 @@ function exportCSV(expenses, categories, monthLabel) {
   URL.revokeObjectURL(url);
 }
 
-function StatCard({ label, value, tone = 'muted' }) {
-  const colors = { muted: 'text-ink-100', ok: 'text-ok', danger: 'text-danger' };
-  return (
-    <div className="bg-ink-900/60 border border-ink-800 rounded-2xl px-3 py-3">
-      <div className="text-[10px] uppercase tracking-widest text-ink-500">{label}</div>
-      <div className={'amount mt-1 text-sm font-medium ' + colors[tone]}>{value}</div>
-    </div>
-  );
-}
-
 export function Reports() {
   const { user } = useAuth();
   const [monthOffset, setMonthOffset] = useState(0);
@@ -74,7 +64,7 @@ export function Reports() {
   const dailyAvg = useMemo(() => {
     const days = new Set(expenses.map(e => e.date)).size;
     return days > 0 ? totalSpend / days : 0;
-  }, [expenses]);
+  }, [expenses, totalSpend]);
 
   const biggestExpense = useMemo(() =>
     expenses.reduce((max, e) => Number(e.amount) > Number(max?.amount ?? 0) ? e : max, null),
@@ -82,7 +72,8 @@ export function Reports() {
   );
 
   return (
-    <div className="max-w-md mx-auto px-5 pt-safe pt-4 pb-24">
+    <div className="max-w-md mx-auto px-5 pt-safe pt-4 pb-10">
+      {/* Header */}
       <div className="flex items-center justify-between py-3">
         <div>
           <div className="text-xs text-ink-400 uppercase tracking-widest">Ledger</div>
@@ -99,6 +90,7 @@ export function Reports() {
         </div>
       </div>
 
+      {/* Export */}
       {expenses.length > 0 && (
         <button onClick={() => exportCSV(expenses, categories, monthKey)}
           className="flex items-center gap-2 h-9 px-4 border border-ink-700 rounded-full text-xs text-ink-300 hover:border-gold-500/50 hover:text-gold-400 transition mt-1">
@@ -113,12 +105,14 @@ export function Reports() {
         </div>
       ) : (
         <>
+          {/* Summary cards */}
           <div className="mt-5 grid grid-cols-3 gap-2">
             <StatCard label="Spent" value={formatINR(totalSpend)} />
             <StatCard label="Income" value={formatINR(totalIncome)} />
             <StatCard label={savings >= 0 ? 'Saved' : 'Over'} value={formatINR(Math.abs(savings))} tone={savings >= 0 ? 'ok' : 'danger'} />
           </div>
 
+          {/* Quick stats */}
           <div className="mt-5 grid grid-cols-2 gap-2">
             <StatCard label="Daily avg" value={formatINR(dailyAvg)} />
             <StatCard label="Transactions" value={String(expenses.length)} />
@@ -137,6 +131,7 @@ export function Reports() {
             </div>
           )}
 
+          {/* Category breakdown */}
           <div className="mt-7">
             <div className="text-[11px] uppercase tracking-widest text-ink-500 mb-3">Category breakdown</div>
             <div className="space-y-2">
@@ -167,6 +162,16 @@ export function Reports() {
 
       <Fab onClick={() => setExpenseModalOpen(true)} />
       <AddExpenseModal open={expenseModalOpen} onClose={() => setExpenseModalOpen(false)} userId={user?.id} />
+    </div>
+  );
+}
+
+function StatCard({ label, value, tone = 'muted' }) {
+  const colors = { muted: 'text-ink-100', ok: 'text-ok', danger: 'text-danger' };
+  return (
+    <div className="bg-ink-900/60 border border-ink-800 rounded-2xl px-3 py-3">
+      <div className="text-[10px] uppercase tracking-widest text-ink-500">{label}</div>
+      <div className={'amount mt-1 text-sm font-medium ' + colors[tone]}>{value}</div>
     </div>
   );
 }

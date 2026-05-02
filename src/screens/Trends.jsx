@@ -34,11 +34,10 @@ export function Trends() {
 
   const monthlyData = useMemo(() => {
     return months.map(m => {
-      const key = m.key;
       const total = allExpenses
-        .filter(e => e.date.startsWith(key))
+        .filter(e => e.date.startsWith(m.key))
         .reduce((s, e) => s + Number(e.amount), 0);
-      return { label: m.label, key, total };
+      return { label: m.label, key: m.key, total };
     });
   }, [allExpenses, months]);
 
@@ -49,8 +48,7 @@ export function Trends() {
   const categoryTrends = useMemo(() => {
     const byCat = new Map();
     for (const e of allExpenses) {
-      const key = String(e.category_id);
-      byCat.set(key, (byCat.get(key) ?? 0) + Number(e.amount));
+      byCat.set(e.category_id, (byCat.get(e.category_id) ?? 0) + Number(e.amount));
     }
     return Array.from(byCat.entries())
       .map(([id, total]) => {
@@ -63,13 +61,17 @@ export function Trends() {
 
   const currentMonth = months[months.length - 1].key;
 
+  const changeLabel = change === 0 ? '—' : (change > 0 ? '▲ ' : '▼ ') + Math.abs(change).toFixed(1) + '%';
+  const changeCls = change > 0 ? 'text-danger' : change < 0 ? 'text-ok' : 'text-ink-400';
+
   return (
-    <div className="max-w-md mx-auto px-5 pt-safe pt-4 pb-24">
+    <div className="max-w-md mx-auto px-5 pt-safe pt-4 pb-10">
       <div className="py-3">
         <div className="text-xs text-ink-400 uppercase tracking-widest">Ledger</div>
         <div className="font-display text-lg text-ink-100">Trends</div>
       </div>
 
+      {/* Month-on-month change */}
       <div className="mt-2 grid grid-cols-2 gap-3">
         <div className="bg-ink-900/60 border border-ink-800 rounded-2xl px-3 py-3">
           <div className="text-[10px] uppercase tracking-widest text-ink-500">This month</div>
@@ -77,12 +79,11 @@ export function Trends() {
         </div>
         <div className="bg-ink-900/60 border border-ink-800 rounded-2xl px-3 py-3">
           <div className="text-[10px] uppercase tracking-widest text-ink-500">vs last month</div>
-          <div className={`amount mt-1 text-base font-medium ${change > 0 ? 'text-danger' : change < 0 ? 'text-ok' : 'text-ink-400'}`}>
-            {change === 0 ? '—' : (change > 0 ? '▲' : '▼') + ' ' + Math.abs(change).toFixed(1) + '%'}
-          </div>
+          <div className={'amount mt-1 text-base font-medium ' + changeCls}>{changeLabel}</div>
         </div>
       </div>
 
+      {/* 6-month bar chart */}
       <div className="mt-8">
         <div className="text-[11px] uppercase tracking-widest text-ink-500 mb-4">6-month spend</div>
         {allExpenses.length === 0 ? (
@@ -105,6 +106,7 @@ export function Trends() {
         )}
       </div>
 
+      {/* Top categories over 6 months */}
       {categoryTrends.length > 0 && (
         <div className="mt-8">
           <div className="text-[11px] uppercase tracking-widest text-ink-500 mb-3">Top categories (6 months)</div>

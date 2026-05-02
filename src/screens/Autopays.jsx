@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Plus, Trash2, PauseCircle, PlayCircle } from 'lucide-react';
 import { useAutopays, addAutopay, updateAutopay, deleteAutopay } from '../hooks/useAutopays';
 import { useCategories } from '../hooks/useCategories';
@@ -83,12 +83,14 @@ function AutopayForm({ onSave, onClose, categories }) {
 
 function AutopayCard({ autopay: a, cat, userId }) {
   const isActive = a.status === 'active';
+  const nextDate = fromISODate(a.next_charge_date);
+  const isOverdue = nextDate < new Date() && isActive;
   return (
-    <div className="bg-ink-900/60 border border-ink-800 rounded-2xl px-4 py-3 flex items-center gap-3">
+    <div className={'bg-ink-900/60 border rounded-2xl px-4 py-3 flex items-center gap-3 ' + (isOverdue ? 'border-danger/30' : 'border-ink-800')}>
       <span className="text-xl shrink-0">{cat?.icon ?? '📦'}</span>
       <div className="flex-1 min-w-0">
         <div className="text-sm text-ink-100 font-medium">{a.name}</div>
-        <div className="text-xs text-ink-500 mt-0.5">
+        <div className={'text-xs mt-0.5 ' + (isOverdue ? 'text-danger' : 'text-ink-500')}>
           {relativeDay(a.next_charge_date)} · {a.frequency === 'yearly' ? 'yearly' : 'monthly'}
         </div>
       </div>
@@ -112,7 +114,8 @@ export function Autopays() {
   const [modalOpen, setModalOpen] = useState(false);
   const [expenseModalOpen, setExpenseModalOpen] = useState(false);
 
-  const catMap = new Map(categories.map(c => [c.id, c]));
+  const catMap = useMemo(() => new Map(categories.map(c => [c.id, c])), [categories]);
+
   const active = autopays.filter(a => a.status === 'active');
   const paused = autopays.filter(a => a.status === 'paused');
   const monthlyTotal = active.reduce((s, a) => s + (a.frequency === 'monthly' ? Number(a.amount) : Number(a.amount) / 12), 0);

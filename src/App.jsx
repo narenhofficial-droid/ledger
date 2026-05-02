@@ -13,7 +13,7 @@ import { Reports } from './screens/Reports';
 import { Settings } from './screens/Settings';
 
 export default function App() {
-  const { user, loading, signInWithEmail, signOut } = useAuth();
+  const { user, loading, signInWithEmail } = useAuth();
 
   if (loading) {
     return (
