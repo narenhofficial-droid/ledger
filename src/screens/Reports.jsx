@@ -7,6 +7,8 @@ import { useAuth } from '../hooks/useAuth';
 import { formatINR } from '../lib/format';
 import { format } from '../lib/dates';
 import { startOfMonth, endOfMonth } from 'date-fns';
+import { Fab } from '../components/shell/Fab';
+import { AddExpenseModal } from '../components/expense/AddExpenseModal';
 
 function exportCSV(expenses, categories, monthLabel) {
   const catMap = new Map(categories.map(c => [c.id, c]));
@@ -14,21 +16,32 @@ function exportCSV(expenses, categories, monthLabel) {
   const rows = expenses.map(e => {
     const cat = catMap.get(e.category_id)?.name ?? 'Unknown';
     const notes = (e.notes ?? '').replace(/,/g, ';');
-    return `${e.date},${cat},${e.payment_method},${e.amount},${notes}`;
+    return e.date + ',' + cat + ',' + e.payment_method + ',' + e.amount + ',' + notes;
   });
   const csv = [header, ...rows].join('\n');
   const blob = new Blob([csv], { type: 'text/csv' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `ledger-${monthLabel}.csv`;
+  a.download = 'ledger-' + monthLabel + '.csv';
   a.click();
   URL.revokeObjectURL(url);
+}
+
+function StatCard({ label, value, tone = 'muted' }) {
+  const colors = { muted: 'text-ink-100', ok: 'text-ok', danger: 'text-danger' };
+  return (
+    <div className="bg-ink-900/60 border border-ink-800 rounded-2xl px-3 py-3">
+      <div className="text-[10px] uppercase tracking-widest text-ink-500">{label}</div>
+      <div className={'amount mt-1 text-sm font-medium ' + colors[tone]}>{value}</div>
+    </div>
+  );
 }
 
 export function Reports() {
   const { user } = useAuth();
   const [monthOffset, setMonthOffset] = useState(0);
+  const [expenseModalOpen, setExpenseModalOpen] = useState(false);
 
   const baseDate = useMemo(() => {
     const d = new Date();
@@ -69,8 +82,7 @@ export function Reports() {
   );
 
   return (
-    <div className="max-w-md mx-auto px-5 pt-safe pt-4 pb-10">
-      {/* Header */}
+    <div className="max-w-md mx-auto px-5 pt-safe pt-4 pb-24">
       <div className="flex items-center justify-between py-3">
         <div>
           <div className="text-xs text-ink-400 uppercase tracking-widest">Ledger</div>
@@ -87,7 +99,6 @@ export function Reports() {
         </div>
       </div>
 
-      {/* Export */}
       {expenses.length > 0 && (
         <button onClick={() => exportCSV(expenses, categories, monthKey)}
           className="flex items-center gap-2 h-9 px-4 border border-ink-700 rounded-full text-xs text-ink-300 hover:border-gold-500/50 hover:text-gold-400 transition mt-1">
@@ -102,17 +113,15 @@ export function Reports() {
         </div>
       ) : (
         <>
-          {/* Summary cards */}
           <div className="mt-5 grid grid-cols-3 gap-2">
             <StatCard label="Spent" value={formatINR(totalSpend)} />
             <StatCard label="Income" value={formatINR(totalIncome)} />
             <StatCard label={savings >= 0 ? 'Saved' : 'Over'} value={formatINR(Math.abs(savings))} tone={savings >= 0 ? 'ok' : 'danger'} />
           </div>
 
-          {/* Quick stats */}
           <div className="mt-5 grid grid-cols-2 gap-2">
             <StatCard label="Daily avg" value={formatINR(dailyAvg)} />
-            <StatCard label="Transactions" value={`${expenses.length}`} />
+            <StatCard label="Transactions" value={String(expenses.length)} />
           </div>
 
           {biggestExpense && (
@@ -128,7 +137,6 @@ export function Reports() {
             </div>
           )}
 
-          {/* Category breakdown */}
           <div className="mt-7">
             <div className="text-[11px] uppercase tracking-widest text-ink-500 mb-3">Category breakdown</div>
             <div className="space-y-2">
@@ -147,7 +155,7 @@ export function Reports() {
                       </div>
                     </div>
                     <div className="mt-2 h-1 bg-ink-800 rounded-full overflow-hidden">
-                      <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: cat?.color ?? '#d4af37' }} />
+                      <div className="h-full rounded-full" style={{ width: pct + '%', backgroundColor: cat?.color ?? '#d4af37' }} />
                     </div>
                   </div>
                 );
@@ -156,16 +164,9 @@ export function Reports() {
           </div>
         </>
       )}
-    </div>
-  );
-}
 
-function StatCard({ label, value, tone = 'muted' }) {
-  const colors = { muted: 'text-ink-100', ok: 'text-ok', danger: 'text-danger' };
-  return (
-    <div className="bg-ink-900/60 border border-ink-800 rounded-2xl px-3 py-3">
-      <div className="text-[10px] uppercase tracking-widest text-ink-500">{label}</div>
-      <div className={`amount mt-1 text-sm font-medium ${colors[tone]}`}>{value}</div>
+      <Fab onClick={() => setExpenseModalOpen(true)} />
+      <AddExpenseModal open={expenseModalOpen} onClose={() => setExpenseModalOpen(false)} userId={user?.id} />
     </div>
   );
 }

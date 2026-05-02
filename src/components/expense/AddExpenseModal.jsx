@@ -3,12 +3,13 @@ import { Modal } from '../ui/Modal';
 import { Chip } from '../ui/Chip';
 import { Button } from '../ui/Button';
 import { useCategories, useSubcategories } from '../../hooks/useCategories';
-import { addExpense } from '../../hooks/useExpenses';
+import { addExpense, updateExpense } from '../../hooks/useExpenses';
 import { PAYMENT_METHODS } from '../../constants/categories';
 import { toISODate as dateISO } from '../../lib/dates';
 import { parseAmount, formatIndianNumber as fmtNum } from '../../lib/format';
 
-export function AddExpenseModal({ open, onClose, userId }) {
+// editData — pass an expense object to switch to edit mode, omit for add mode
+export function AddExpenseModal({ open, onClose, userId, editData = null }) {
   const [amount, setAmount] = useState('');
   const [categoryId, setCategoryId] = useState(null);
   const [subcategoryId, setSubcategoryId] = useState(null);
@@ -21,16 +22,26 @@ export function AddExpenseModal({ open, onClose, userId }) {
   const subcategories = useSubcategories(userId, categoryId);
   const inputRef = useRef(null);
 
-  // Auto-focus amount input on open
+  // Pre-fill form when modal opens; reset when it closes
   useEffect(() => {
     if (open) {
+      if (editData) {
+        setAmount(String(editData.amount));
+        setCategoryId(editData.category_id);
+        setSubcategoryId(editData.subcategory_id || null);
+        setPaymentMethod(editData.payment_method);
+        setNotes(editData.notes || '');
+        setDate(editData.date);
+      } else {
+        setAmount(''); setCategoryId(null); setSubcategoryId(null);
+        setPaymentMethod('UPI'); setNotes(''); setDate(dateISO(new Date()));
+      }
       setTimeout(() => inputRef.current?.focus(), 80);
     } else {
-      // reset
       setAmount(''); setCategoryId(null); setSubcategoryId(null);
       setPaymentMethod('UPI'); setNotes(''); setDate(dateISO(new Date()));
     }
-  }, [open]);
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Reset subcategory when category changes
   useEffect(() => { setSubcategoryId(null); }, [categoryId]);
@@ -42,24 +53,30 @@ export function AddExpenseModal({ open, onClose, userId }) {
     if (!canSave || saving) return;
     setSaving(true);
     try {
-      await addExpense(userId, {
-        date,
-        amount: amountNumber,
-        category_id: categoryId,
-        subcategory_id: subcategoryId,
-        payment_method: paymentMethod,
-        notes: notes.trim() || null,
-      });
+      if (editData) {
+        await updateExpense(userId, editData.id, {
+          date, amount: amountNumber, category_id: categoryId,
+          subcategory_id: subcategoryId, payment_method: paymentMethod,
+          notes: notes.trim() || null,
+        });
+      } else {
+        await addExpense(userId, {
+          date, amount: amountNumber, category_id: categoryId,
+          subcategory_id: subcategoryId, payment_method: paymentMethod,
+          notes: notes.trim() || null,
+        });
+      }
       onClose();
     } finally {
       setSaving(false);
     }
   }
 
+  const isEdit = Boolean(editData);
+
   return (
-    <Modal open={open} onClose={onClose} title="Add expense">
+    <Modal open={open} onClose={onClose} title={isEdit ? 'Edit expense' : 'Add expense'}>
       <div className="space-y-5">
-        {/* Amount — the hero of this screen */}
         <div className="text-center py-2">
           <div className="flex items-baseline justify-center gap-1 amount">
             <span className="text-3xl text-ink-400 font-display">₹</span>
@@ -75,23 +92,15 @@ export function AddExpenseModal({ open, onClose, userId }) {
             />
           </div>
           {amountNumber > 0 && (
-            <div className="mt-1 text-xs text-ink-400 amount">
-              {fmtNum(amountNumber)}
-            </div>
+            <div className="mt-1 text-xs text-ink-400 amount">{fmtNum(amountNumber)}</div>
           )}
         </div>
 
-        {/* Categories */}
         <div>
           <Label>Category</Label>
           <div className="flex flex-wrap gap-2 mt-2">
             {categories.map(c => (
-              <Chip
-                key={c.id}
-                selected={categoryId === c.id}
-                onClick={() => setCategoryId(c.id)}
-                color={c.color}
-              >
+              <Chip key={c.id} selected={categoryId === c.id} onClick={() => setCategoryId(c.id)} color={c.color}>
                 <span className="text-base leading-none">{c.icon}</span>
                 <span>{c.name.split(' ')[0]}</span>
               </Chip>
@@ -99,17 +108,12 @@ export function AddExpenseModal({ open, onClose, userId }) {
           </div>
         </div>
 
-        {/* Subcategories — only when category selected */}
         {categoryId && subcategories.length > 0 && (
           <div className="animate-fade-in">
             <Label>Subcategory <span className="text-ink-500 font-normal">(optional)</span></Label>
             <div className="flex flex-wrap gap-2 mt-2">
               {subcategories.map(s => (
-                <Chip
-                  key={s.id}
-                  selected={subcategoryId === s.id}
-                  onClick={() => setSubcategoryId(subcategoryId === s.id ? null : s.id)}
-                >
+                <Chip key={s.id} selected={subcategoryId === s.id} onClick={() => setSubcategoryId(subcategoryId === s.id ? null : s.id)}>
                   {s.name}
                 </Chip>
               ))}
@@ -117,19 +121,15 @@ export function AddExpenseModal({ open, onClose, userId }) {
           </div>
         )}
 
-        {/* Payment method */}
         <div>
           <Label>Paid via</Label>
           <div className="flex gap-2 mt-2">
             {PAYMENT_METHODS.map(m => (
-              <Chip key={m} selected={paymentMethod === m} onClick={() => setPaymentMethod(m)}>
-                {m}
-              </Chip>
+              <Chip key={m} selected={paymentMethod === m} onClick={() => setPaymentMethod(m)}>{m}</Chip>
             ))}
           </div>
         </div>
 
-        {/* Notes */}
         <div>
           <Label>Note <span className="text-ink-500 font-normal">(optional)</span></Label>
           <input
@@ -141,9 +141,10 @@ export function AddExpenseModal({ open, onClose, userId }) {
           />
         </div>
 
-        {/* Date — collapsed by default, today */}
-        <details className="text-sm">
-          <summary className="text-ink-400 cursor-pointer select-none">Change date (today)</summary>
+        <details className="text-sm" open={isEdit}>
+          <summary className="text-ink-400 cursor-pointer select-none">
+            {isEdit ? 'Date' : 'Change date (today)'}
+          </summary>
           <input
             type="date"
             value={date}
@@ -152,14 +153,8 @@ export function AddExpenseModal({ open, onClose, userId }) {
           />
         </details>
 
-        {/* Save */}
-        <Button
-          onClick={handleSave}
-          disabled={!canSave || saving}
-          size="lg"
-          className="w-full"
-        >
-          {saving ? 'Saving…' : 'Save expense'}
+        <Button onClick={handleSave} disabled={!canSave || saving} size="lg" className="w-full">
+          {saving ? 'Saving...' : isEdit ? 'Update expense' : 'Save expense'}
         </Button>
       </div>
     </Modal>

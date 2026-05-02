@@ -4,7 +4,7 @@ import { AppShell } from './components/shell/AppShell';
 import { SignIn } from './screens/SignIn';
 import { Dashboard } from './screens/Dashboard';
 import { Recent } from './screens/Recent';
-import { Spend } from './screens/Spend';
+import { Categories } from './screens/Categories';
 import { Trends } from './screens/Trends';
 import { Autopays } from './screens/Autopays';
 import { Lending } from './screens/Lending';
@@ -31,7 +31,7 @@ export default function App() {
         <Route element={<AppShell />}>
           <Route path="/"           element={<Dashboard user={user} />} />
           <Route path="/recent"     element={<Recent />} />
-          <Route path="/categories" element={<Spend />} />
+          <Route path="/categories" element={<Categories />} />
           <Route path="/trends"     element={<Trends />} />
           <Route path="/autopays"   element={<Autopays />} />
           <Route path="/lending"    element={<Lending />} />

@@ -9,6 +9,12 @@ import { thisMonthRange } from '../lib/dates';
 import { Modal } from '../components/ui/Modal';
 import { Button } from '../components/ui/Button';
 import { Chip } from '../components/ui/Chip';
+import { Fab } from '../components/shell/Fab';
+import { AddExpenseModal } from '../components/expense/AddExpenseModal';
+
+function Label({ children }) {
+  return <div className="text-xs text-ink-400 uppercase tracking-wider">{children}</div>;
+}
 
 function BudgetForm({ onSave, onClose, categories, existingCategoryIds }) {
   const available = categories.filter(c => !existingCategoryIds.includes(c.id));
@@ -52,7 +58,7 @@ function BudgetForm({ onSave, onClose, categories, existingCategoryIds }) {
         </div>
       </div>
       <Button onClick={handleSave} disabled={!canSave || saving} size="lg" className="w-full">
-        {saving ? 'Saving…' : 'Set budget'}
+        {saving ? 'Saving...' : 'Set budget'}
       </Button>
     </div>
   );
@@ -62,9 +68,10 @@ export function Budgets() {
   const { user } = useAuth();
   const budgets = useBudgets(user?.id);
   const categories = useCategories(user?.id);
-  const range = useMemo(() => thisMonthRange(), []);
+  const range = thisMonthRange();
   const expenses = useExpenses(user?.id, range);
   const [modalOpen, setModalOpen] = useState(false);
+  const [expenseModalOpen, setExpenseModalOpen] = useState(false);
 
   const catMap = useMemo(() => new Map(categories.map(c => [c.id, c])), [categories]);
 
@@ -89,7 +96,7 @@ export function Budgets() {
   const overCount = enriched.filter(b => b.overBudget).length;
 
   return (
-    <div className="max-w-md mx-auto px-5 pt-safe pt-4 pb-10">
+    <div className="max-w-md mx-auto px-5 pt-safe pt-4 pb-24">
       <div className="flex items-end justify-between py-3">
         <div>
           <div className="text-xs text-ink-400 uppercase tracking-widest">Ledger</div>
@@ -115,21 +122,19 @@ export function Budgets() {
       ) : (
         <div className="mt-6 space-y-3">
           {enriched.map(b => {
-            const barColor = b.overBudget ? '#ef4444' : b.atAlert ? '#eab308' : b.cat?.color ?? '#d4af37';
+            const barColor = b.overBudget ? '#ef4444' : b.atAlert ? '#eab308' : (b.cat?.color ?? '#d4af37');
             return (
-              <div key={b.id} className={`bg-ink-900/60 border rounded-2xl p-4 ${b.overBudget ? 'border-danger/30' : 'border-ink-800'}`}>
+              <div key={b.id} className={'bg-ink-900/60 border rounded-2xl p-4 ' + (b.overBudget ? 'border-danger/30' : 'border-ink-800')}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
                     <span className="text-xl">{b.cat?.icon ?? '•'}</span>
                     <div>
                       <div className="text-sm text-ink-100">{b.cat?.name ?? 'Unknown'}</div>
-                      <div className="text-xs text-ink-500 mt-0.5 amount">
-                        {formatINR(b.spent)} of {formatINR(b.monthly_limit)}
-                      </div>
+                      <div className="text-xs text-ink-500 mt-0.5 amount">{formatINR(b.spent)} of {formatINR(b.monthly_limit)}</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <div className={`text-sm font-medium amount ${b.overBudget ? 'text-danger' : b.atAlert ? 'text-warn' : 'text-ink-300'}`}>
+                    <div className={'text-sm font-medium amount ' + (b.overBudget ? 'text-danger' : b.atAlert ? 'text-warn' : 'text-ink-300')}>
                       {b.pct}%
                     </div>
                     <button onClick={() => { if (window.confirm('Remove this budget?')) deleteBudget(user.id, b.id); }}
@@ -139,7 +144,7 @@ export function Budgets() {
                   </div>
                 </div>
                 <div className="mt-3 h-1.5 bg-ink-800 rounded-full overflow-hidden">
-                  <div className="h-full rounded-full transition-all duration-500" style={{ width: `${b.pct}%`, backgroundColor: barColor }} />
+                  <div className="h-full rounded-full transition-all duration-500" style={{ width: b.pct + '%', backgroundColor: barColor }} />
                 </div>
                 {b.overBudget && (
                   <div className="text-xs text-danger mt-2 amount">Over by {formatINR(b.spent - b.monthly_limit)}</div>
@@ -151,17 +156,11 @@ export function Budgets() {
       )}
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Set budget">
-        <BudgetForm
-          categories={categories}
-          existingCategoryIds={budgets.map(b => b.category_id)}
-          onClose={() => setModalOpen(false)}
-          onSave={data => addBudget(user.id, data)}
-        />
+        <BudgetForm categories={categories} existingCategoryIds={budgets.map(b => b.category_id)} onClose={() => setModalOpen(false)} onSave={data => addBudget(user.id, data)} />
       </Modal>
+
+      <Fab onClick={() => setExpenseModalOpen(true)} />
+      <AddExpenseModal open={expenseModalOpen} onClose={() => setExpenseModalOpen(false)} userId={user?.id} />
     </div>
   );
-}
-
-function Label({ children }) {
-  return <div className="text-xs text-ink-400 uppercase tracking-wider">{children}</div>;
 }
