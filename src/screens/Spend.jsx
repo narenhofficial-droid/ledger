@@ -5,7 +5,7 @@ import { useIncomes } from '../hooks/useIncomes';
 import { useCategories } from '../hooks/useCategories';
 import { useAuth } from '../hooks/useAuth';
 import { formatINR } from '../lib/format';
-import { thisMonthRange, format, subMonths } from '../lib/dates';
+import { format } from '../lib/dates';
 import { startOfMonth, endOfMonth } from 'date-fns';
 
 export function Spend() {
