@@ -8,10 +8,12 @@ import { useUpcomingAutopays } from '../hooks/useAutopays';
 import { thisMonthRange, todayRange, format, relativeDay } from '../lib/dates';
 import { formatINR } from '../lib/format';
 import { AddExpenseModal } from '../components/expense/AddExpenseModal';
+import { AddIncomeModal } from '../components/income/AddIncomeModal';
 import { Fab } from '../components/shell/Fab';
 
 export function Dashboard({ user, onSignOut }) {
-  const [modalOpen, setModalOpen] = useState(false);
+  const [expenseOpen, setExpenseOpen] = useState(false);
+  const [incomeOpen, setIncomeOpen] = useState(false);
   const navigate = useNavigate();
 
   const monthRange = thisMonthRange();
@@ -21,16 +23,15 @@ export function Dashboard({ user, onSignOut }) {
   const categories = useCategories(user.id);
   const upcoming = useUpcomingAutopays(user.id, 7);
 
-  const monthSpend = useMemo(() => monthExpenses.reduce((s, e) => s + Number(e.amount), 0), [monthExpenses]);
-  const todaySpend = useMemo(() => todayExpenses.reduce((s, e) => s + Number(e.amount), 0), [todayExpenses]);
+  const monthSpend  = useMemo(() => monthExpenses.reduce((s, e) => s + Number(e.amount), 0), [monthExpenses]);
+  const todaySpend  = useMemo(() => todayExpenses.reduce((s, e) => s + Number(e.amount), 0), [todayExpenses]);
   const monthIncome = useMemo(() => monthIncomes.reduce((s, e) => s + Number(e.amount), 0), [monthIncomes]);
   const leftToSpend = monthIncome - monthSpend;
 
   const topCategories = useMemo(() => {
     const byCat = new Map();
-    for (const e of monthExpenses) {
+    for (const e of monthExpenses)
       byCat.set(e.category_id, (byCat.get(e.category_id) ?? 0) + Number(e.amount));
-    }
     return Array.from(byCat.entries())
       .map(([id, total]) => {
         const cat = categories.find(c => c.id === id);
@@ -43,10 +44,10 @@ export function Dashboard({ user, onSignOut }) {
   const monthLabel = format(new Date(), 'MMMM yyyy');
 
   const quickLinks = [
-    { label: 'Trends',  icon: TrendingUp, path: '/trends',   hint: '6-month view' },
-    { label: 'Budgets', icon: Target,     path: '/budgets',  hint: 'Monthly limits' },
-    { label: 'Reports', icon: FileText,   path: '/reports',  hint: 'Export & review' },
-    { label: 'Settings',icon: Settings,   path: '/settings', hint: 'Prefs & sign out' },
+    { label: 'Trends',   icon: TrendingUp, path: '/trends',   hint: '6-month view' },
+    { label: 'Budgets',  icon: Target,     path: '/budgets',  hint: 'Monthly limits' },
+    { label: 'Reports',  icon: FileText,   path: '/reports',  hint: 'Export & review' },
+    { label: 'Settings', icon: Settings,   path: '/settings', hint: 'Prefs & sign out' },
   ];
 
   return (
@@ -57,7 +58,7 @@ export function Dashboard({ user, onSignOut }) {
           <div className="text-xs text-ink-400 uppercase tracking-widest">Ledger</div>
           <div className="font-display text-lg text-ink-100">{monthLabel}</div>
         </div>
-        <button onClick={() => navigate('/settings')} className="text-xs text-ink-500 hover:text-ink-300 transition">
+        <button onClick={() => navigate('/settings')} className="text-ink-500 hover:text-ink-300 transition p-1">
           <Settings size={18} />
         </button>
       </div>
@@ -70,11 +71,19 @@ export function Dashboard({ user, onSignOut }) {
         </div>
       </div>
 
-      {/* Stats row */}
+      {/* Stats — Income card is tappable to add income */}
       <div className="mt-7 grid grid-cols-3 gap-3">
-        <Stat label="Income" value={formatINR(monthIncome)} tone="muted" />
-        <Stat label="Left"   value={formatINR(leftToSpend)} tone={leftToSpend < 0 ? 'danger' : 'gold'} />
-        <Stat label="Today"  value={formatINR(todaySpend)}  tone="muted" />
+        <button
+          onClick={() => setIncomeOpen(true)}
+          className="bg-ink-900/60 border border-ink-800 rounded-2xl px-3 py-3 text-left hover:border-gold-500/30 transition active:scale-[0.97]"
+        >
+          <div className="text-[10px] uppercase tracking-widest text-ink-500">Income</div>
+          <div className="amount mt-1 text-base font-medium text-ink-200">
+            {monthIncome > 0 ? formatINR(monthIncome) : <span className="text-ink-600 text-sm">+ Add</span>}
+          </div>
+        </button>
+        <Stat label="Left"  value={formatINR(leftToSpend)} tone={leftToSpend < 0 ? 'danger' : 'gold'} />
+        <Stat label="Today" value={formatINR(todaySpend)}  tone="muted" />
       </div>
 
       {/* Top categories */}
@@ -123,23 +132,20 @@ export function Dashboard({ user, onSignOut }) {
       )}
 
       {/* Empty state */}
-      {monthExpenses.length === 0 && (
+      {monthExpenses.length === 0 && monthIncome === 0 && (
         <div className="mt-12 text-center text-ink-500">
           <div className="text-4xl mb-3">🪙</div>
-          <div className="text-sm">No expenses yet this month.</div>
-          <div className="text-xs mt-1">Tap the gold + button to log your first one.</div>
+          <div className="text-sm">Nothing logged yet this month.</div>
+          <div className="text-xs mt-1">Tap <span className="text-ink-300">Income</span> to add earnings · <span className="text-gold-500">+</span> to log expenses.</div>
         </div>
       )}
 
-      {/* Quick links to other sections */}
+      {/* Quick links */}
       <Section title="More">
         <div className="grid grid-cols-2 gap-3">
           {quickLinks.map(({ label, icon: Icon, path, hint }) => (
-            <button
-              key={path}
-              onClick={() => navigate(path)}
-              className="bg-ink-900/60 border border-ink-800 rounded-2xl p-4 text-left hover:border-ink-600 transition active:scale-[0.97]"
-            >
+            <button key={path} onClick={() => navigate(path)}
+              className="bg-ink-900/60 border border-ink-800 rounded-2xl p-4 text-left hover:border-ink-600 transition active:scale-[0.97]">
               <Icon size={18} className="text-gold-400 mb-2" strokeWidth={1.75} />
               <div className="text-sm text-ink-100 font-medium">{label}</div>
               <div className="text-xs text-ink-500 mt-0.5">{hint}</div>
@@ -149,8 +155,9 @@ export function Dashboard({ user, onSignOut }) {
       </Section>
 
       <div className="h-8" />
-      <Fab onClick={() => setModalOpen(true)} />
-      <AddExpenseModal open={modalOpen} onClose={() => setModalOpen(false)} userId={user.id} />
+      <Fab onClick={() => setExpenseOpen(true)} />
+      <AddExpenseModal open={expenseOpen} onClose={() => setExpenseOpen(false)} userId={user.id} />
+      <AddIncomeModal  open={incomeOpen}  onClose={() => setIncomeOpen(false)}  userId={user.id} />
     </div>
   );
 }
