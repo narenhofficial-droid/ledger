@@ -62,7 +62,7 @@ export function Budgets() {
   const { user } = useAuth();
   const budgets = useBudgets(user?.id);
   const categories = useCategories(user?.id);
-  const range = thisMonthRange();
+  const range = useMemo(() => thisMonthRange(), []);
   const expenses = useExpenses(user?.id, range);
   const [modalOpen, setModalOpen] = useState(false);
 

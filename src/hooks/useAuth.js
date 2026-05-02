@@ -4,6 +4,14 @@ import { fullPull, syncAll } from '../lib/sync';
 import { seedDefaultsIfNeeded } from '../lib/seed';
 import { db } from '../lib/db';
 
+async function initialise(userId) {
+  await fullPull(userId);
+  await seedDefaultsIfNeeded(userId);
+  // Second pull only needed if seeder just wrote new rows to Supabase
+  const catCount = await db.categories.where('user_id').equals(userId).count();
+  if (catCount === 0) await fullPull(userId);
+}
+
 export function useAuth() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -13,23 +21,27 @@ export function useAuth() {
 
     supabase.auth.getSession().then(async ({ data }) => {
       if (!mounted) return;
-      setSession(data.session);
-      setLoading(false);
-      if (data.session?.user?.id) {
-        await fullPull(data.session.user.id);
-        await seedDefaultsIfNeeded(data.session.user.id);
-        // Pull again to get freshly seeded rows into Dexie
-        await fullPull(data.session.user.id);
+      const sess = data.session;
+      if (sess?.user?.id) {
+        // Pull data BEFORE revealing the app so dashboard isn't empty
+        try { await initialise(sess.user.id); } catch (e) { console.warn(e); }
       }
+      if (!mounted) return;
+      setSession(sess);
+      setLoading(false);
     });
 
     const { data: sub } = supabase.auth.onAuthStateChange(async (_event, sess) => {
       if (!mounted) return;
-      setSession(sess);
       if (sess?.user?.id && _event === 'SIGNED_IN') {
-        await fullPull(sess.user.id);
-        await seedDefaultsIfNeeded(sess.user.id);
-        await fullPull(sess.user.id);
+        setLoading(true);
+        try { await initialise(sess.user.id); } catch (e) { console.warn(e); }
+        if (!mounted) return;
+        setSession(sess);
+        setLoading(false);
+      } else {
+        setSession(sess);
+        if (_event === 'SIGNED_OUT') setLoading(false);
       }
     });
 
@@ -39,15 +51,13 @@ export function useAuth() {
     };
   }, []);
 
+  // Background sync every 60 s while online
   useEffect(() => {
     if (!session?.user?.id) return;
     const id = setInterval(() => syncAll(session.user.id), 60_000);
     const onOnline = () => syncAll(session.user.id);
     window.addEventListener('online', onOnline);
-    return () => {
-      clearInterval(id);
-      window.removeEventListener('online', onOnline);
-    };
+    return () => { clearInterval(id); window.removeEventListener('online', onOnline); };
   }, [session?.user?.id]);
 
   async function signInWithEmail(email) {

@@ -59,7 +59,6 @@ export function Trends() {
       .slice(0, 5);
   }, [allExpenses, categories]);
 
-  const maxBar = Math.max(...monthlyData.map(m => m.total), 1);
   const currentMonth = months[months.length - 1].key;
 
   return (

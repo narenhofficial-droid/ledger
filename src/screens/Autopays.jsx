@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Plus, Trash2, PauseCircle, PlayCircle } from 'lucide-react';
 import { useAutopays, addAutopay, updateAutopay, deleteAutopay } from '../hooks/useAutopays';
 import { useCategories } from '../hooks/useCategories';
 import { useAuth } from '../hooks/useAuth';
 import { formatINR, parseAmount } from '../lib/format';
-import { relativeDay, format, fromISODate } from '../lib/dates';
+import { relativeDay, format } from '../lib/dates';
 import { Modal } from '../components/ui/Modal';
 import { Button } from '../components/ui/Button';
 import { Chip } from '../components/ui/Chip';
@@ -86,7 +86,7 @@ export function Autopays() {
   const categories = useCategories(user?.id);
   const [modalOpen, setModalOpen] = useState(false);
 
-  const catMap = new Map(categories.map(c => [c.id, c]));
+  const catMap = useMemo(() => new Map(categories.map(c => [c.id, c])), [categories]);
 
   const active = autopays.filter(a => a.status === 'active');
   const paused = autopays.filter(a => a.status === 'paused');

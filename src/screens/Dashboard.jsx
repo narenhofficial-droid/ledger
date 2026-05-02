@@ -11,7 +11,7 @@ import { AddExpenseModal } from '../components/expense/AddExpenseModal';
 import { AddIncomeModal } from '../components/income/AddIncomeModal';
 import { Fab } from '../components/shell/Fab';
 
-export function Dashboard({ user, onSignOut }) {
+export function Dashboard({ user }) {
   const [expenseOpen, setExpenseOpen] = useState(false);
   const [incomeOpen, setIncomeOpen] = useState(false);
   const navigate = useNavigate();
