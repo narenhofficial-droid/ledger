@@ -5,7 +5,7 @@ import { useExpenses } from '../hooks/useExpenses';
 import { useIncomes } from '../hooks/useIncomes';
 import { useCategories } from '../hooks/useCategories';
 import { useUpcomingAutopays } from '../hooks/useAutopays';
-import { thisMonthRange, todayRange, format, fromISODate, relativeDay } from '../lib/dates';
+import { thisMonthRange, todayRange, format, relativeDay } from '../lib/dates';
 import { formatINR } from '../lib/format';
 import { AddExpenseModal } from '../components/expense/AddExpenseModal';
 import { Fab } from '../components/shell/Fab';

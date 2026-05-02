@@ -6,7 +6,6 @@ import { formatINR, parseAmount } from '../lib/format';
 import { format, fromISODate } from '../lib/dates';
 import { Modal } from '../components/ui/Modal';
 import { Button } from '../components/ui/Button';
-import { Chip } from '../components/ui/Chip';
 
 function LendingForm({ type, onSave, onClose }) {
   const [counterparty, setCounterparty] = useState('');

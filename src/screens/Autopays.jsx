@@ -154,7 +154,6 @@ export function Autopays() {
 
 function AutopayCard({ autopay: a, cat, userId }) {
   const isActive = a.status === 'active';
-  const nextDate = fromISODate ? fromISODate(a.next_charge_date) : new Date(a.next_charge_date);
 
   return (
     <div className="bg-ink-900/60 border border-ink-800 rounded-2xl px-4 py-3 flex items-center gap-3">

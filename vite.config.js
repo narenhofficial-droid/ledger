@@ -9,8 +9,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icons/*.png'],
       manifest: {
-        name: 'Finance Tracker',
-        short_name: 'Finance',
+        name: 'Ledger',
+        short_name: 'Ledger',
         description: 'Personal finance tracker',
         theme_color: '#0a0a0a',
         background_color: '#0a0a0a',
