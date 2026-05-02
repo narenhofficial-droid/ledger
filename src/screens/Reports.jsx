@@ -5,7 +5,7 @@ import { useIncomes } from '../hooks/useIncomes';
 import { useCategories } from '../hooks/useCategories';
 import { useAuth } from '../hooks/useAuth';
 import { formatINR } from '../lib/format';
-import { format, lastNMonths } from '../lib/dates';
+import { format } from '../lib/dates';
 import { startOfMonth, endOfMonth } from 'date-fns';
 
 function exportCSV(expenses, categories, monthLabel) {
@@ -43,7 +43,6 @@ export function Reports() {
   const expenses = useExpenses(user?.id, range);
   const incomes = useIncomes(user?.id, range);
   const categories = useCategories(user?.id);
-  const months = useMemo(() => lastNMonths(6), []);
 
   const catMap = useMemo(() => new Map(categories.map(c => [c.id, c])), [categories]);
 

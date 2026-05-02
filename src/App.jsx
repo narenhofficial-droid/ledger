@@ -29,7 +29,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route element={<AppShell />}>
-          <Route path="/"           element={<Dashboard user={user} onSignOut={signOut} />} />
+          <Route path="/"           element={<Dashboard user={user} />} />
           <Route path="/recent"     element={<Recent />} />
           <Route path="/categories" element={<Spend />} />
           <Route path="/trends"     element={<Trends />} />

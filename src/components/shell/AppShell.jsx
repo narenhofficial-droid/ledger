@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { Home, List, PieChart, Calendar, Wallet, TrendingUp, Target, FileText, Settings } from 'lucide-react';
+import { Home, List, PieChart, Calendar, Wallet } from 'lucide-react';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 
 const tabs = [
